@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #111827;
+            color: #d1d5db;
+        }
+        .card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+        }
+        .status-sukses { color: #34d399; }
+        .status-gagal { color: #f87171; }
+        .status-pending { color: #fbbf24; }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="container mx-auto p-4 md:p-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-white">MQTT Forwarder Status</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card rounded-lg p-6 text-center">
+                <h2 class="text-lg font-semibold text-gray-400">Status Forward Terakhir</h2>
+                <p id="last-forward-status" class="text-2xl font-bold mt-2">-</p>
+            </div>
+            <div class="card rounded-lg p-6 text-center">
+                <h2 class="text-lg font-semibold text-gray-400">Countdown Forward Berikutnya</h2>
+                <p id="countdown" class="text-2xl font-bold mt-2">00:00</p>
+            </div>
+            <div class="card rounded-lg p-6 text-center">
+                <h2 class="text-lg font-semibold text-gray-400">Item di Buffer</h2>
+                <p id="buffer-items" class="text-2xl font-bold mt-2">0</p>
+            </div>
+        </div>
+
+        <div class="card rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4 text-white">Data di Buffer Saat Ini</h2>
+            <div id="data-buffer" class="bg-gray-900 rounded p-4 h-96 overflow-y-auto font-mono text-sm">
+                <p class="text-gray-500">Menunggu data...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "00:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updateStatus() {
+            fetch('/forwarder/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Status Forward
+                    const statusEl = document.getElementById('last-forward-status');
+                    statusEl.textContent = data.LastForwardStatus || 'Belum ada';
+                    statusEl.className = 'text-2xl font-bold mt-2 ';
+                    if (data.LastForwardStatus === 'Sukses') {
+                        statusEl.classList.add('status-sukses');
+                    } else if (data.LastForwardStatus === 'Gagal') {
+                        statusEl.classList.add('status-gagal');
+                    } else {
+                        statusEl.classList.add('status-pending');
+                    }
+
+                    // Countdown
+                    const countdownEl = document.getElementById('countdown');
+                    const nextForwardTime = new Date(data.NextForwardTime);
+                    const now = new Date();
+                    const diffSeconds = (nextForwardTime - now) / 1000;
+                    countdownEl.textContent = formatTime(diffSeconds);
+
+                    // Buffer Items
+                    document.getElementById('buffer-items').textContent = data.BufferItemCount || 0;
+
+                    // Data Buffer
+                    const dataBufferEl = document.getElementById('data-buffer');
+                    if (data.ReceivedDataBuffer && data.ReceivedDataBuffer.length > 0) {
+                        dataBufferEl.innerHTML = '';
+                        data.ReceivedDataBuffer.forEach(item => {
+                            const p = document.createElement('p');
+                            p.textContent = `[Area: ${item.area}, CK: ${item.ck}] Temp: ${item.temp?.length || 0}, Door: ${item.door?.length || 0}`;
+                            dataBufferEl.appendChild(p);
+                        });
+                    } else {
+                        dataBufferEl.innerHTML = '<p class="text-gray-500">Buffer kosong.</p>';
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching status:", err);
+                    document.getElementById('data-buffer').innerHTML = '<p class="text-red-500">Gagal memuat status.</p>';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus();
+            setInterval(updateStatus, 2000); // Refresh every 2 seconds
+        });
+    </script>
+</body>
+</html>

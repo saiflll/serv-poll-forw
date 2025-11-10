@@ -1,11 +1,14 @@
 services:
   postgres:
     image: postgres:13
-    container_name: postgress
+    container_name: postgres_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      # Atur zona waktu di dalam kontainer postgres agar konsisten
+      TZ: "Asia/Jakarta"
+      PGTZ: "Asia/Jakarta"
     # Tidak perlu expose port database ke host jika hanya diakses oleh service lain
     # ports:
     #   - "5432:5432"
@@ -16,6 +19,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - iot-net
 
   emqx:
     image: emqx:5.5
@@ -36,17 +41,21 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+    networks:
+      - iot-net
 
-  servfi:
+  backend:
     build:
-      context: ./iot-suhu-be
+      # Arahkan ke direktori backend Go Anda
+      context: ./forward
       dockerfile: Dockerfile
-    container_name: serv
+    container_name: forwarder
     ports:
-      - "8000:8000"
-      
+      - "8888:8888"
     environment:
+      # Arahkan backend untuk terhubung ke service emqx dan postgres di dalam Docker
       - MQTT_BROKER_URI=tcp://emqx:1883
+      - DB_HOST=postgres_db
       - TZ=Asia/Jakarta
     env_file:
       - .env
@@ -55,7 +64,27 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-
+    networks:
+      - iot-net
+      
+  ota:
+    container_name: ota-app
+    build:
+      context: ./ota
+      dockerfile: Dockerfile
+    ports:
+      - "9999:9999"
+    networks:
+      - iot-net
+    volumes:
+      - ./ota/static/uploads:/app/static/uploads
+    environment:
+      - MQTT_BROKER=tcp://emqx:1883
+      - MQTT_USER=cntrl
+      - MQTT_PASS=
+    restart: unless-stopped
+    depends_on:
+      - emqx
   # frontend:
   #   build:
   #     context: ./iot-suhu-fe
@@ -70,3 +99,7 @@ volumes:
   postgres_data:
   emqx_data:
   emqx_log:
+
+networks:
+  iot-net:
+    driver: bridge
