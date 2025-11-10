@@ -45,15 +45,15 @@ def create_random_payload_dict():
         "temp": temp_data
     }
 
-def generate_json_batch(target_size_mb):
+def generate_json_batch(target_size_kb):
     """Generates a single JSON string consisting of a list of payloads,
-       with a total size close to the target in MB."""
-    target_size_bytes = target_size_mb * 1024 * 1024
+       with a total size close to the target in KB."""
+    target_size_bytes = target_size_kb * 1024
     payload_list = []
     current_size = 0
 
-    print(f"Generating a {target_size_mb} MB batch... (this may take a moment)")
-    
+    print(f"Generating a {target_size_kb} KB batch... (this may take a moment)")
+
     # Estimate the size of a single payload to start with a reasonable number
     # of items, reducing the number of checks.
     # A typical payload is around 500 bytes.
@@ -71,7 +71,7 @@ def generate_json_batch(target_size_mb):
         # Add more items if needed
         payload_list.append(create_random_payload_dict())
 
-    print(f"Batch generated. Actual size: {current_size / (1024*1024):.2f} MB")
+    print(f"Batch generated. Actual size: {current_size / 1024:.2f} KB")
     return json_string
 
 # --- MQTT Callbacks ---
@@ -92,8 +92,8 @@ def on_publish(client, userdata, mid):
 def main():
     """Main function to connect and publish data in large batches."""
     total_bytes_sent = 0
-    total_size_limit_bytes = 250 * 1024 * 1024  # 250 MB
-    batch_size_mb = 50
+    total_size_limit_bytes = 6 * 1024 * 1024  # 6 MB
+    batch_size_kb = 200  # 200 KB
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -112,12 +112,12 @@ def main():
 
     try:
         while total_bytes_sent < total_size_limit_bytes:
-            # Generate a 50 MB JSON batch
-            payload_str = generate_json_batch(batch_size_mb)
+            # Generate a 200 KB JSON batch
+            payload_str = generate_json_batch(batch_size_kb)
             payload_bytes = payload_str.encode('utf-8')
             payload_size = len(payload_bytes)
 
-            print(f"🚀 Sending batch of {payload_size / (1024*1024):.2f} MB...")
+            print(f"🚀 Sending batch of {payload_size / 1024:.2f} KB...")
             result = client.publish(MQTT_TOPIC_INGEST, payload_bytes, qos=1)
             
             # Wait for the publish to complete. For large messages, this might take time.
@@ -126,7 +126,8 @@ def main():
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
                 total_bytes_sent += payload_size
                 progress_mb = total_bytes_sent / (1024 * 1024)
-                print(f"✅ Batch sent successfully. Total sent: {progress_mb:.2f} MB / 250.00 MB\n")
+                total_limit_mb = total_size_limit_bytes / (1024 * 1024)
+                print(f"✅ Batch sent successfully. Total sent: {progress_mb:.2f} MB / {total_limit_mb:.2f} MB\n")
             else:
                 # Note: MQTT brokers often have a message size limit (e.g., 256MB by default in Mosquitto).
                 # If you see this error, the batch might be too large for the broker's configuration.

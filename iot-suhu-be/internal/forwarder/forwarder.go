@@ -15,7 +15,7 @@ import (
 // --- Configuration ---
 const (
 	aggregationInterval = 20 * time.Minute
-	sizeLimitBytes      = 50 * 1024 * 1024 // 250 MB
+	sizeLimitBytes      = 10 * 1024 * 1024 // 10 MB
 	forwardTopic        = "sensor/data/ingest"
 )
 
