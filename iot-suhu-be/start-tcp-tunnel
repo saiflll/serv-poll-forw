@@ -1,0 +1,24 @@
+Command name argument expected.
+
+[m[1mAvailable command groups for gcloud workstations:[m
+
+[m  [1mTools[m
+      clusters                Manage Cloud Workstations cluster resources.
+      configs                 Manage Cloud Workstations configuration resources.
+
+[m[1mAvailable commands for gcloud workstations:[m
+
+      create                  Create a workstation.
+      delete                  Delete a workstation.
+      describe                Describe a workstation.
+      get-iam-policy          Get the IAM policy for a workstation.
+      list                    List workstations.
+      list-usable             List usable workstations.
+      set-iam-policy          Set the IAM policy for a workstation.
+      ssh                     SSH into a running workstation.
+      start                   Start a workstation.
+      start-tcp-tunnel        Start a tunnel through which a local process can
+                              forward TCP traffic to the workstation.
+      stop                    Stop a workstation.
+
+[m

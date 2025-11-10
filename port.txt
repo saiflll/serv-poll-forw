@@ -1,0 +1,45 @@
+Dokumentasi Akses Port untuk Aplikasi Monitoring Suhu
+=====================================================
+
+IP Server Lokal: http://172.20.100.11
+
+-----------------------------------------------------
+Akses Pengguna Utama
+-----------------------------------------------------
+
+1.  **Aplikasi Frontend (Web UI)**
+    *   URL          : http://172.20.100.11:8080
+    *   Deskripsi    : Halaman web utama untuk monitoring dan manajemen.
+
+-----------------------------------------------------
+Akses Manajemen & Development
+-----------------------------------------------------
+
+2.  **EMQX Dashboard (Manajemen MQTT)**
+    *   URL          : http://172.20.100.11:18083
+    *   Deskripsi    : Dashboard untuk memantau status MQTT broker, melihat client yang terhubung, dan debugging pesan.
+    *   Login Default: 
+        *   User: admin
+        *   Pass: public
+
+3.  **Backend API Server**
+    *   URL          : http://172.20.100.11:8000
+    *   Deskripsi    : Titik akhir (endpoint) utama untuk API backend. Digunakan oleh frontend untuk mengambil dan mengirim data.
+
+-----------------------------------------------------
+Akses Perangkat IoT (Device Access)
+-----------------------------------------------------
+
+4.  **MQTT Broker (Standard Port)**
+    *   Host         : 172.20.100.11
+    *   Port         : 1883
+    *   Deskripsi    : Port utama untuk perangkat IoT (seperti ESP32/ESP8266) untuk terhubung dan mengirim data suhu.
+    *   Kredensial   :
+        *   User: servfi_app
+        *   Pass: S3cr3tP@ssw0rd!
+
+5.  **MQTT Broker (WebSocket Port)**
+    *   Host         : 172.20.100.11
+    *   Port         : 8083
+    *   Deskripsi    : Port alternatif untuk koneksi MQTT menggunakan protokol WebSocket, jika diperlukan.
+

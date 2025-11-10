@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgress
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # Tidak perlu expose port database ke host jika hanya diakses oleh service lain
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  emqx:
+    image: emqx:5.5
+    container_name: emqx
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "18083:18083"
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    environment:
+      - EMQX_ALLOW_ANONYMOUS=false
+      - EMQX_AUTH__USER__1__USERNAME=servfi_app
+      - EMQX_AUTH__USER__1__PASSWORD=S3cr3tP@ssw0rd!
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  servfi:
+    build:
+      context: ./iot-suhu-be
+      dockerfile: Dockerfile
+    container_name: serv
+    ports:
+      - "8000:8000"
+      
+    environment:
+      - MQTT_BROKER_URI=tcp://emqx:1883
+      - TZ=Asia/Jakarta
+    env_file:
+      - .env
+    depends_on:
+      emqx:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # frontend:
+  #   build:
+  #     context: ./iot-suhu-fe
+  #     args:
+  #       - API_URL=http://172.20.100.11:8000/api
+  #     dockerfile: DockerFile
+  #   container_name: frontend
+  #   ports:
+  #     - "8080:80"
+
+volumes:
+  postgres_data:
+  emqx_data:
+  emqx_log:

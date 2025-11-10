@@ -1,0 +1,634 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+		"name": "IoT Suhu BE",
+		"description": "Dokumentasi API untuk backend sistem monitoring suhu, kelembaban, dan status pintu.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set(\"jwt_token\", pm.response.json().token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Endpoint untuk otentikasi user. Mengembalikan token JWT yang akan digunakan untuk otorisasi pada endpoint lain. \n\n**Test Script**: Token yang diterima akan otomatis disimpan sebagai *collection variable* `jwt_token`."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"logout"
+							]
+						},
+						"description": "Endpoint untuk logout (saat ini hanya mengembalikan pesan sukses, tidak ada invalidasi token di sisi server)."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoint terkait otentikasi user."
+		},
+		{
+			"name": "Sensor & Area Data",
+			"item": [
+				{
+					"name": "Get All Sensor Statuses (Real-time)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/sensor/statuses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sensor",
+								"statuses"
+							]
+						},
+						"description": "Mengambil status real-time (data terbaru dalam 10 menit terakhir) dari semua sensor suhu dan kelembaban. Endpoint ini sangat berguna untuk dashboard utama.\n\n- **Output**: Array dari status sensor, dikelompokkan berdasarkan area dan nomor sensor, beserta statusnya (`normal`, `warning`, `danger`)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detailed Alerts (Today)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/sensor/alerts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sensor",
+								"alerts"
+							]
+						},
+						"description": "Mengambil daftar semua alert (peringatan atau kritis) yang terjadi pada hari ini untuk sensor suhu dan kelembaban.\n\n- **Output**: Array dari objek alert yang detail, berisi nama area, tipe sensor, nilai sebelum dan sesudah, deskripsi, status, dan waktu kejadian."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Area Summary by Sensor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/area/s0_13/sensor/1/summary?start=2024-01-01&end=today",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"area",
+								"s0_13",
+								"sensor",
+								"1",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "2024-01-01",
+									"description": "Tanggal mulai (YYYY-MM-DD, RFC3339, atau 'today')"
+								},
+								{
+									"key": "end",
+									"value": "today",
+									"description": "Tanggal akhir (YYYY-MM-DD, RFC3339, atau 'today')"
+								}
+							]
+						},
+						"description": "Menyediakan ringkasan statistik (min, max, avg, last) dan data tabel historis untuk satu sensor spesifik dalam rentang waktu tertentu.\n\n- **Path Params**: `area_id` (format `s0_{id}`), `no` (nomor sensor).\n- **Query Params**: `start` & `end` (opsional, default 'today').\n- **Output**: Objek JSON berisi statistik dan array data untuk tabel."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chart Data for Sensor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chart/sensor?area_id=s0_13&sensor_no=1&type=temperature&range=24h",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chart",
+								"sensor"
+							],
+							"query": [
+								{
+									"key": "area_id",
+									"value": "s0_13",
+									"description": "ID Area dengan format 's0_{id}'"
+								},
+								{
+									"key": "sensor_no",
+									"value": "1",
+									"description": "Nomor sensor"
+								},
+								{
+									"key": "type",
+									"value": "temperature",
+									"description": "'temperature' atau 'humidity'"
+								},
+								{
+									"key": "range",
+									"value": "24h",
+									"description": "Rentang waktu relatif, contoh: '1h', '24h', '7d', '30d'. Jika ini diisi, start/end date diabaikan."
+								},
+								{
+									"key": "start_date",
+									"value": "2024-08-15T00:00:00+07:00",
+									"description": "Tanggal mulai absolut (format RFC3339). Digunakan jika 'range' tidak ada.",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-15T23:59:59+07:00",
+									"description": "Tanggal akhir absolut (format RFC3339). Digunakan jika 'range' tidak ada.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Mengambil data time-series yang dioptimalkan untuk charting (grafik) untuk satu sensor spesifik.\n\n- **Query Params**:\n  - `area_id`: Wajib. Contoh: `s0_1`.\n  - `sensor_no`: Wajib. Contoh: `1`.\n  - `type`: Wajib. `'temperature'` atau `'humidity'`.\n  - `range`: Opsional. Rentang waktu relatif, contoh: `1h`, `24h`, `7d`.\n  - `start_date` & `end_date`: Opsional. Rentang waktu absolut (format RFC3339). Digunakan jika `range` tidak diisi."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Door Data",
+			"item": [
+				{
+					"name": "Get Door Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/door/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"door",
+								"summary"
+							]
+						},
+						"description": "Mengambil status terakhir dari semua pintu (proximity sensor).\n\n- **Output**: Objek JSON dimana key adalah nama pintu dan value adalah statusnya (0 = Terbuka, 1 = Tertutup)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Door Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/door/1/stats?start_date=2024-01-01&end_date=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"door",
+								"1",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Menghitung dan mengembalikan statistik detail untuk satu pintu dalam rentang waktu tertentu.\n\n- **Path Param**: `door_id`.\n- **Query Params**: `start_date` & `end_date` (YYYY-MM-DD).\n- **Output**: Objek JSON berisi persentase buka/tutup, durasi buka terlama, rata-rata durasi buka, dan total durasi buka hari ini."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Doors Stats (Aggregated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/door/stats/all?start_date=2024-01-01&end_date=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"door",
+								"stats",
+								"all"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Sama seperti 'Get Single Door Stats', tetapi menghitung statistik secara agregat untuk semua pintu."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Door Alerts History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/door/1/alerts?start_date=2024-01-01&end_date=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"door",
+								"1",
+								"alerts"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Menganalisis data historis untuk menemukan kejadian-kejadian alert pada satu pintu, seperti 'Sensor Offline' atau 'Pintu Terbuka Terlalu Lama'.\n\n- **Path Param**: `door_id`.\n- **Query Params**: `start_date` & `end_date` (YYYY-MM-DD)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Doors Alerts History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/door/alerts/all?start_date=2024-01-01&end_date=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"door",
+								"alerts",
+								"all"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Sama seperti 'Get Single Door Alerts History', tetapi untuk semua pintu."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Door Chart Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chart/door/1?start_date=2024-08-01&end_date=2024-08-20&result=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chart",
+								"door",
+								"1"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-08-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								},
+								{
+									"key": "result",
+									"value": "100",
+									"description": "(Opsional) Batasi jumlah titik data yang dikembalikan (downsampling) untuk performa chart."
+								}
+							]
+						},
+						"description": "Mengambil data historis status pintu (buka/tutup) untuk charting.\n\n- **Path Param**: `door_id`.\n- **Query Params**: `start_date`, `end_date`, `result` (opsional, untuk downsampling)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Doors Chart Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chart/door/all?start_date=2024-08-01&end_date=2024-08-20&result=500",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"chart",
+								"door",
+								"all"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-08-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								},
+								{
+									"key": "result",
+									"value": "500"
+								}
+							]
+						},
+						"description": "Sama seperti 'Get Single Door Chart Data', tetapi untuk semua pintu digabungkan."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Door Table Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/table/door/1?start_date=2024-08-19&end_date=2024-08-20&result=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"table",
+								"door",
+								"1"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-08-19"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								},
+								{
+									"key": "result",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Mengambil data log event pintu dalam format tabel, menunjukkan durasi setiap status (terbuka/tertutup).\n\n- **Path Param**: `door_id`.\n- **Query Params**: `start_date`, `end_date`, `result` (opsional, membatasi jumlah baris terbaru)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Doors Table Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/table/door/all?start_date=2024-08-19&end_date=2024-08-20&result=200",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"table",
+								"door",
+								"all"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "20-24-08-19"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								},
+								{
+									"key": "result",
+									"value": "200"
+								}
+							]
+						},
+						"description": "Sama seperti 'Get Single Door Table Data', tetapi untuk semua pintu digabungkan dan diurutkan berdasarkan waktu."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Data Export",
+			"item": [
+				{
+					"name": "Export All Sensors in Area to Excel",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/export/area/s0_13?start=2024-08-01&end=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"export",
+								"area",
+								"s0_13"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "2024-08-01"
+								},
+								{
+									"key": "end",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Mengekspor semua data sensor (suhu dan RH) dari satu area dalam rentang waktu tertentu ke dalam file Excel (.xlsx). File akan memiliki dua sheet: 'Temperature' dan 'RH'.\n\n- **Path Param**: `area_id` (format `s0_{id}`).\n- **Query Params**: `start` & `end` (YYYY-MM-DD)."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Single Sensor to Excel",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/export/sensor?area_id=s0_13&sensor_no=1&start_date=2024-08-01&end_date=2024-08-20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"export",
+								"sensor"
+							],
+							"query": [
+								{
+									"key": "area_id",
+									"value": "s0_13"
+								},
+								{
+									"key": "sensor_no",
+									"value": "1"
+								},
+								{
+									"key": "start_date",
+									"value": "2024-08-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-08-20"
+								}
+							]
+						},
+						"description": "Mengekspor data gabungan (suhu dan RH) dari satu sensor spesifik ke dalam file Excel (.xlsx).\n\n- **Query Params**: `area_id`, `sensor_no`, `start_date`, `end_date`."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Get Timezone Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/timezone",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"config",
+								"timezone"
+							]
+						},
+						"description": "Mengembalikan zona waktu yang dikonfigurasi di server (misal: 'Asia/Jakarta')."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Device Data Ingestion",
+			"item": [
+				{
+					"name": "Send Sensor Data",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"ck\": 3,\n        \"area\": 13,\n        \"temp\": [\n            {\n                \"no\": 1,\n                \"ts\": \"2024-08-21T10:00:00.000Z\",\n                \"temp\": 22.5,\n                \"rh\": 55.1\n            },\n            {\n                \"no\": 2,\n                \"ts\": \"2024-08-21T10:00:00.000Z\",\n                \"temp\": 22.6\n            }\n        ],\n        \"door\": [\n            {\n                \"doorid\": 13,\n                \"value\": 1\n            }\n        ]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/data",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Endpoint utama untuk perangkat IoT mengirimkan data sensor. Endpoint ini menerima array dari objek data area.\n\n- **Body**: Array dari `AreaData`.\n  - `area`: ID area.\n  - `temp`: Array data sensor suhu/RH. `rh` bersifat opsional.\n  - `door`: Array data sensor pintu/proximity.\n  - `ts` di dalam `temp` harus dalam format RFC3339Nano (contoh: `2024-08-21T10:00:00.123Z`)."
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			},
+			"description": "Endpoint untuk menerima data dari perangkat IoT. Biasanya tidak memerlukan otentikasi JWT."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

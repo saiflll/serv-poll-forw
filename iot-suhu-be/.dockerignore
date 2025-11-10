@@ -1,0 +1,8 @@
+
+servfi
+servfi.exe
+.dockerignore
+.env
+iot_data.db
+.git
+.gitignore

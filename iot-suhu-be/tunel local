@@ -1,0 +1,1 @@
+gcloud workstations start-tcp-tunnel servfigit-12377835 1883 --cluster=cluster-iktsryn7xnhpexlu6255bftka4 --region=us-central1 --config=default --local-host-port=127.0.0.1:1883
